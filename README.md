@@ -166,3 +166,51 @@ Todos os testes produziram os resultados esperados:
 ## Considerações
 
 A validação do arquivo de entrada é crítica para o funcionamento correto de todo o sistema. Um erro de leitura, como capturar índices errados ou aceitar um arquivo malformado sem avisar, causaria resultados incorretos em todos os módulos seguintes de forma silenciosa, tornando a depuração muito mais difícil. As validações implementadas garantem que o sistema falha cedo e com mensagens objetivas, facilitando a identificação de problemas nos arquivos de entrada.
+
+---
+
+# Núcleo do Algoritmo Genético (Pessoa 3)
+
+Esta parte implementa o coração do Algoritmo Genético: a geração da população inicial, a seleção dos pais, o cruzamento (crossover) para permutações e o ciclo do AG que junta tudo e usa a função de aptidão da Pessoa 2.
+
+O código fica em `nucleo_ag.py`. A explicação completa, os parâmetros e como testar estão documentados em `P3Solution.md`.
+
+## O que foi entregue
+
+| Componente | Função em `nucleo_ag.py` |
+|---|---|
+| População inicial | `gerar_populacao(n, tamanho_populacao)` |
+| Seleção por torneio (padrão) | `selecao_torneio(populacao, aptidoes, k)` |
+| Seleção por roleta (alternativa) | `selecao_roleta(populacao, aptidoes)` |
+| Cruzamento Order Crossover (OX) | `crossover_ox(pai1, pai2)` |
+| Ciclo completo do AG | `algoritmo_genetico(n, escola_a, escola_b, ...)` |
+
+## Integração com os outros módulos
+
+- **Pessoa 1 (leitura):** o ciclo recebe `n`, `escola_a`, `escola_b` produzidos por `ler_arquivo`.
+- **Pessoa 2 (heurística):** a seleção e a evolução usam `aptidao(s, escola_a, escola_b)` diretamente.
+- **Pessoa 4 (mutação e parada):** `algoritmo_genetico` aceita a função de mutação via parâmetro `mutacao` e o critério de parada via `num_geracoes` (a P4 substitui sem mexer no arquivo). Enquanto isso, há uma mutação por troca (swap) e parada por número de gerações como **padrões provisórios**, só para o núcleo rodar de forma isolada.
+- **Pessoa 5 (modos de execução):** `algoritmo_genetico` aceita um `callback` chamado a cada geração (com melhor solução, aptidão e média), e devolve o `historico` da aptidão por geração — base para o modo passo a passo e para o gráfico de evolução.
+
+## Parâmetros definidos
+
+| Parâmetro | Valor padrão | Justificativa |
+|---|---|---|
+| `tamanho_populacao` | 80 | Diversidade suficiente sem custo alto; funciona para N pequeno e grande |
+| `taxa_cruzamento` | 0.9 | Alta recombinação, faixa clássica de AG (0.6–0.95) |
+| `k_torneio` | 3 | Pressão seletiva moderada, mantém diversidade |
+| `elitismo` | `True` | O melhor indivíduo nunca se perde; a aptidão nunca piora |
+
+> `taxa_mutacao` e `num_geracoes` aparecem como parâmetros, mas a definição e justificativa finais são responsabilidade da Pessoa 4.
+
+## Como executar e testar
+
+```bash
+# Roda o núcleo do AG de forma isolada sobre um arquivo de preferências
+python nucleo_ag.py preferencias.txt
+
+# Roda a bateria de testes do núcleo
+python test_nucleo_ag.py
+```
+
+Nos testes, o AG atinge o **ótimo global** (validado por força bruta) tanto em N=4 (`preferencias.txt`) quanto em N=6 (`teste6.txt`).
