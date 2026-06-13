@@ -23,6 +23,7 @@ PADROES PROVISORIOS. A Pessoa 4 substitui ambos sem alterar este arquivo.
 import random
 
 from heuristica import codificar, aptidao, decodificar, custo
+from mutacao import mutacao_swap, TAXA_MUTACAO_PADRAO
 
 
 # ---------------------------------------------------------------------------
@@ -151,8 +152,9 @@ def algoritmo_genetico(
     escola_b,
     tamanho_populacao=80,
     taxa_cruzamento=0.9,
-    taxa_mutacao=0.2,
+    taxa_mutacao=TAXA_MUTACAO_PADRAO,
     num_geracoes=300,
+    geracoes_sem_melhora=None,
     k_torneio=3,
     elitismo=True,
     selecao=selecao_torneio,
@@ -184,12 +186,13 @@ def algoritmo_genetico(
     if semente is not None:
         random.seed(semente)
     if mutacao is None:
-        mutacao = _mutacao_swap_padrao
+        mutacao = mutacao_swap
 
     populacao = gerar_populacao(n, tamanho_populacao)
     historico = []
     melhor_global = None
     melhor_apt_global = float("-inf")
+    geracoes_sem_melhora_atual = 0
 
     for geracao in range(num_geracoes):
         aptidoes = [aptidao(ind, escola_a, escola_b) for ind in populacao]
@@ -198,8 +201,16 @@ def algoritmo_genetico(
         if aptidoes[idx_melhor] > melhor_apt_global:
             melhor_apt_global = aptidoes[idx_melhor]
             melhor_global = populacao[idx_melhor][:]
+            geracoes_sem_melhora_atual = 0
+        else:
+            geracoes_sem_melhora_atual += 1
 
         historico.append(melhor_apt_global)
+
+        convergiu = (
+            geracoes_sem_melhora is not None
+            and geracoes_sem_melhora_atual >= geracoes_sem_melhora
+        )
 
         if callback is not None:
             callback({
@@ -208,7 +219,12 @@ def algoritmo_genetico(
                 "melhor_aptidao": melhor_apt_global,
                 "aptidao_media": sum(aptidoes) / len(aptidoes),
                 "aptidoes": aptidoes,
+                "convergiu": convergiu,
+                "geracoes_sem_melhora_atual": geracoes_sem_melhora_atual,
             })
+
+        if convergiu:
+            break
 
         # Monta a proxima geracao.
         nova_populacao = []
@@ -256,8 +272,13 @@ if __name__ == "__main__":
 
     print(f"[------ Nucleo do AG: N -> {n} ------]\n")
 
-    sol, apt, hist = algoritmo_genetico(n, escola_a, escola_b, semente=42)
+    sol, apt, hist = algoritmo_genetico(
+        n, escola_a, escola_b, semente=42, geracoes_sem_melhora=50
+    )
 
+    parou_cedo = len(hist) < 300
+    motivo = "convergencia (sem melhora)" if parou_cedo else "numero maximo de geracoes"
+    print(f"Criterio de parada:    {motivo}")
     print(f"Geracoes executadas:   {len(hist)}")
     print(f"Aptidao inicial:       {hist[0]}")
     print(f"Aptidao final:         {apt}")
