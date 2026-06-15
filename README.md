@@ -214,3 +214,43 @@ python test_nucleo_ag.py
 ```
 
 Nos testes, o AG atinge o **ótimo global** (validado por força bruta) tanto em N=4 (`preferencias.txt`) quanto em N=6 (`teste6.txt`).
+
+---
+
+# Mutação e Critério de Parada (Pessoa 4)
+
+Esta parte implementa o operador de mutação, define a taxa de mutação e integra o critério de parada ao ciclo do AG da Pessoa 3.
+
+O código fica em `mutacao.py` e as alterações de integração estão em `nucleo_ag.py`. A explicação completa está em `P4Solution.md`.
+
+## O que foi entregue
+
+| Componente | Onde |
+|---|---|
+| Operador de mutação por troca — swap (padrão) | `mutacao.py` → `mutacao_swap` |
+| Operador de mutação por inserção (alternativo) | `mutacao.py` → `mutacao_insercao` |
+| Taxa de mutação definida e justificada | `mutacao.py` → `TAXA_MUTACAO_PADRAO = 0.15` |
+| Critério de parada por número de gerações | `nucleo_ag.py` → parâmetro `num_geracoes` |
+| Critério de parada por convergência | `nucleo_ag.py` → parâmetro `geracoes_sem_melhora` |
+
+## Integração com os outros módulos
+
+- **Pessoa 3 (núcleo):** `mutacao_swap` é injetado via parâmetro `mutacao` — nenhuma linha do núcleo foi reescrita. O novo parâmetro `geracoes_sem_melhora` encerra o loop antecipadamente quando a melhor aptidão não melhora por N gerações consecutivas.
+- **Pessoa 5 (modos de execução):** o callback recebeu dois novos campos — `convergiu` (booleano, `True` na última iteração por convergência) e `geracoes_sem_melhora_atual` (contador atual) — para que a P5 possa exibir o motivo do encerramento.
+
+## Parâmetros definidos
+
+| Parâmetro | Valor | Justificativa |
+|---|---|---|
+| `TAXA_MUTACAO_PADRAO` | 0.15 | Equilíbrio entre diversidade e preservação de bons parciais; literatura clássica sugere 1/N a 0.3; 0.15 funciona bem para N entre 4 e 30 |
+| `geracoes_sem_melhora` | 50 (recomendado) | Tempo suficiente para o swap + OX testarem variações sem desperdiçar gerações inúteis |
+
+## Como executar
+
+```bash
+# Demonstra os operadores de mutação isolados
+python mutacao.py
+
+# AG completo com mutação e critério de parada da P4
+python nucleo_ag.py preferencias.txt
+```
