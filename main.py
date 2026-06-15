@@ -48,9 +48,11 @@ def _exibir_estado_geracao(dados):
     )
 
 
-def _exibir_resultado_final(sol, apt, escola_a, escola_b, historico):
+def _exibir_resultado_final(sol, apt, escola_a, escola_b, historico, convergiu=False):
     _cabecalho("RESULTADO FINAL")
-    print(f"\n  Geracoes executadas : {len(historico)}")
+    motivo = "convergencia (sem melhora)" if convergiu else "numero maximo de geracoes"
+    print(f"\n  Criterio de parada  : {motivo}")
+    print(f"  Geracoes executadas : {len(historico)}")
     print(f"  Aptidao inicial     : {historico[0]:.1f}")
     print(f"  Melhor aptidao      : {apt:.1f}")
     apt_norm = aptidao_normalizada(sol, escola_a, escola_b)
@@ -118,13 +120,14 @@ def modo_completo(n, escola_a, escola_b):
         resultados["ultimo"] = dados
 
     sol, apt, historico = algoritmo_genetico(
-        n, escola_a, escola_b, callback=callback
+        n, escola_a, escola_b, callback=callback, geracoes_sem_melhora=50
     )
 
     if resultados.get("ultimo") and resultados["ultimo"]["geracao"] % 10 != 0:
         _exibir_estado_geracao(resultados["ultimo"])
 
-    _exibir_resultado_final(sol, apt, escola_a, escola_b, historico)
+    convergiu = resultados.get("ultimo", {}).get("convergiu", False)
+    _exibir_resultado_final(sol, apt, escola_a, escola_b, historico, convergiu)
     _plotar_historico_final(historico)
 
 
@@ -145,10 +148,12 @@ def modo_passo_a_passo(n, escola_a, escola_b):
     print("  (digite 'q' + Enter para encerrar antecipadamente)\n")
 
     parar = [False]
+    resultados = {}
 
     def callback(dados):
         if parar[0]:
             return
+        resultados["ultimo"] = dados
 
         _exibir_estado_geracao(dados)
 
@@ -165,12 +170,13 @@ def modo_passo_a_passo(n, escola_a, escola_b):
             parar[0] = True
 
     sol, apt, historico = algoritmo_genetico(
-        n, escola_a, escola_b, callback=callback
+        n, escola_a, escola_b, callback=callback, geracoes_sem_melhora=50
     )
 
     plt.ioff()
 
-    _exibir_resultado_final(sol, apt, escola_a, escola_b, historico)
+    convergiu = resultados.get("ultimo", {}).get("convergiu", False)
+    _exibir_resultado_final(sol, apt, escola_a, escola_b, historico, convergiu)
 
     print("\n  Exibindo grafico final...")
     ax.clear()
